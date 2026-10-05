@@ -23,12 +23,7 @@ def claim_once() -> bool:
             db.commit()
             return False
         verdict, reason = judge(float(row.delta_mm))
-        from h07_extra_trap import on_save
-        verdict, reason = on_save(verdict, reason)
-        if verdict is None:
-            row.status = "pending"
-        else:
-            row.status = "done"
+        row.status = "done"
         row.verdict = verdict
         row.reason = reason
         row.processed_at = datetime.now(timezone.utc)
