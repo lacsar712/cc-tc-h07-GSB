@@ -9,6 +9,12 @@ from rules import judge
 _stop = threading.Event()
 
 
+def settle(delta_mm: float) -> tuple[str, str, str]:
+    """判定并落终态：够线即合格、超线即超限，不停在半态。"""
+    verdict, reason = judge(float(delta_mm))
+    return "done", verdict, reason
+
+
 def claim_once() -> bool:
     db = SessionLocal()
     try:
@@ -22,15 +28,7 @@ def claim_once() -> bool:
         if row is None:
             db.commit()
             return False
-        verdict, reason = judge(float(row.delta_mm))
-        from h07_extra_trap import on_save
-        verdict, reason = on_save(verdict, reason)
-        if verdict is None:
-            row.status = "pending"
-        else:
-            row.status = "done"
-        row.verdict = verdict
-        row.reason = reason
+        row.status, row.verdict, row.reason = settle(row.delta_mm)
         row.processed_at = datetime.now(timezone.utc)
         db.commit()
         return True
